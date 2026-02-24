@@ -4,7 +4,7 @@ Atualize este arquivo a cada nova release antes de fazer o build.
 """
 
 # Versão atual do aplicativo (Semântica: MAJOR.MINOR.PATCH)
-APP_VERSION = "1.0.0"
+APP_VERSION = "1.0.1"
 
 # URL do version.json no GitHub (branch main)
 UPDATE_URL = "https://raw.githubusercontent.com/robincorreaross/farmapop_ia/main/version.json"

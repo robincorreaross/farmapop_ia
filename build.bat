@@ -1,41 +1,58 @@
 @echo off
 echo ============================================================
-echo   FarmaPop IA - Script de Build
+echo   FarmaPop IA - Build Completo (PyInstaller + Instalador)
 echo ============================================================
 echo.
 
 REM Ativa o venv
 call venv\Scripts\activate.bat
 
-echo [1/2] Gerando aplicativo cliente (FarmaPop_IA.exe)...
+echo [1/3] Compilando o aplicativo com PyInstaller...
 pyinstaller --clean --noconfirm FarmaPop_IA.spec
 if errorlevel 1 (
-    echo ERRO: falha ao gerar o aplicativo cliente.
-    pause
-    exit /b 1
+    echo ERRO: falha ao gerar o aplicativo.
+    pause & exit /b 1
 )
-echo OK - Gerado em: dist\FarmaPop_IA\
+echo     OK - dist\FarmaPop_IA\
 
 echo.
-echo [2/2] Gerando ferramenta do desenvolvedor (GeradorLicencas.exe)...
+echo [2/3] Compilando ferramenta do desenvolvedor...
 pyinstaller --clean --noconfirm --distpath dist_tools GeradorLicencas.spec
 if errorlevel 1 (
     echo ERRO: falha ao gerar o gerador de licencas.
-    pause
-    exit /b 1
+    pause & exit /b 1
 )
-echo OK - Gerado em: dist_tools\GeradorLicencas.exe
+echo     OK - dist_tools\GeradorLicencas.exe
+
+echo.
+echo [3/3] Gerando instalador com Inno Setup...
+
+REM Procura o compilador do Inno Setup
+set ISCC=
+if exist "C:\Program Files (x86)\Inno Setup 6\ISCC.exe" set ISCC=C:\Program Files (x86)\Inno Setup 6\ISCC.exe
+if exist "C:\Program Files\Inno Setup 6\ISCC.exe"       set ISCC=C:\Program Files\Inno Setup 6\ISCC.exe
+
+if "%ISCC%"=="" (
+    echo AVISO: Inno Setup nao encontrado.
+    echo Instale em: https://jrsoftware.org/isdl.php
+    echo Depois execute novamente ou compile manualmente: FarmaPop_IA.iss
+    pause & exit /b 0
+)
+
+"%ISCC%" FarmaPop_IA.iss
+if errorlevel 1 (
+    echo ERRO: falha ao gerar o instalador.
+    pause & exit /b 1
+)
 
 echo.
 echo ============================================================
-echo   BUILD CONCLUIDO COM SUCESSO!
+echo   BUILD COMPLETO!
 echo ============================================================
 echo.
-echo  Para distribuir ao cliente:
-echo    Envie a pasta: dist\FarmaPop_IA\
+echo  Instalador: installer\FarmaPop_IA_Setup_v1.0.0.exe
+echo  Gerador:    dist_tools\GeradorLicencas.exe (SOMENTE DEV)
 echo.
-echo  Para uso EXCLUSIVO do desenvolvedor:
-echo    dist_tools\GeradorLicencas.exe
-echo    NAO distribua este arquivo!
+echo  Envie ao cliente: installer\FarmaPop_IA_Setup_v*.exe
 echo ============================================================
 pause

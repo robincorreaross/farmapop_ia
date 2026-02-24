@@ -56,18 +56,6 @@ class HomeScreen(ctk.CTkFrame):
         for tipo_id, info in TIPOS_TRANSACAO.items():
             self._build_type_card(cards_frame, tipo_id, info)
 
-        # ── Aviso ─────────────────────────────────────────────────────────────
-        aviso_frame = ctk.CTkFrame(self, fg_color="#0D2137", corner_radius=10)
-        aviso_frame.grid(row=3, column=0, padx=40, pady=20, sticky="ew")
-
-        ctk.CTkLabel(
-            aviso_frame,
-            text="ℹ️  O número de autorização e a data serão extraídos automaticamente da documentação digitalizada pela IA.",
-            font=ctk.CTkFont(size=12),
-            text_color="#4FC3F7",
-            wraplength=700,
-        ).pack(padx=20, pady=12)
-
         # ── Botão Iniciar ──────────────────────────────────────────────────────
         self.btn_start = ctk.CTkButton(
             self,
@@ -80,7 +68,7 @@ class HomeScreen(ctk.CTkFrame):
             state="disabled",
             command=self._iniciar,
         )
-        self.btn_start.grid(row=4, column=0, padx=40, pady=(0, 40), ipadx=20)
+        self.btn_start.grid(row=3, column=0, padx=40, pady=(40, 40), ipadx=20)
 
     def _build_type_card(self, parent, tipo_id: int, info: dict):
         col = tipo_id - 1
