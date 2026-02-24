@@ -1,14 +1,11 @@
 {
-  "version": "1.0.0",
+  "version": "1.0.1",
   "release_date": "2026-02-24",
   "download_zip_url": "https://github.com/robincorreaross/farmapop_ia/releases/latest/download/FarmaPop_IA.zip",
   "download_url": "https://github.com/robincorreaross/farmapop_ia/releases/latest",
   "changelog": [
-    "Versão inicial do FarmaPop IA",
-    "Suporte a Gemini, OpenAI e Anthropic",
-    "Auditoria Manual para falsos positivos",
-    "Sistema de licença por máquina",
-    "Verificação automática de atualizações"
+    "Removido aviso de extração automática na tela inicial",
+    "Melhorias no gerador de licenças"
   ],
   "mandatory": false
 }
