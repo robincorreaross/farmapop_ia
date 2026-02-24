@@ -1,0 +1,10 @@
+customtkinter>=5.2.0
+Pillow>=10.0.0
+reportlab>=4.0.0
+google-generativeai>=0.8.0
+openai>=1.0.0
+anthropic>=0.25.0
+pywin32>=306
+python-dotenv>=1.0.0
+cryptography>=42.0.0
+tkcalendar>=1.6.1

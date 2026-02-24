@@ -1,0 +1,38 @@
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+*.so
+*.egg
+*.egg-info/
+
+# Ambiente virtual
+venv/
+.env
+
+# Build PyInstaller
+build/
+dist/
+dist_tools/
+*.spec
+
+# Configurações locais (contém chaves de API)
+settings.json
+.app_key
+
+# VS Code
+.vscode/
+
+# Pyright/Pyre
+pyrightconfig.json
+pyrefly.toml
+
+# Temporários
+*.tmp
+*.bak
+update_helper_*.bat
+
+# Diagnóstico
+_check.py
+_test_*.py
