@@ -116,8 +116,8 @@ class App(ctk.CTk):
         try:
             from core.updater import verificar_atualizacao
             verificar_atualizacao(
-                on_update_available=lambda v, c, m: self.after(
-                    0, lambda: self._mostrar_banner_update(v, c, m)
+                on_update_available=lambda v, c, m, z: self.after(
+                    0, lambda: self._mostrar_banner_update(v, c, m, z)
                 )
             )
         except Exception:
