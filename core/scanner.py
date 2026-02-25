@@ -9,6 +9,7 @@ from __future__ import annotations
 import io
 from typing import List, Optional
 
+import pythoncom  # type: ignore[import-untyped]
 from PIL import Image
 
 
@@ -17,6 +18,7 @@ def list_scanners() -> List[str]:
     Lista os scanners disponíveis via WIA.
     Retorna lista de nomes de dispositivos.
     """
+    pythoncom.CoInitialize()
     scanners: List[str] = []
     try:
         import win32com.client  # type: ignore[import-untyped]
@@ -30,19 +32,28 @@ def list_scanners() -> List[str]:
     return scanners
 
 
-def _get_wia_device(device_name: str) -> object | None:
-    """Obtém o objeto de dispositivo WIA pelo nome."""
+def _get_wia_device(device_identifier: str) -> tuple[object | None, Optional[str]]:
+    """
+    Obtém o objeto de dispositivo WIA pelo nome ou DeviceID.
+    Retorna (device_obj, error_msg).
+    """
+    pythoncom.CoInitialize()
     try:
         import win32com.client  # type: ignore[import-untyped]
         wia = win32com.client.Dispatch("WIA.DeviceManager")
         for device_info in wia.DeviceInfos:
-            if device_info.Type == 1:
-                name = device_info.Properties("Name").Value
-                if name == device_name:
-                    return device_info.Connect()
-    except Exception:  # noqa: BLE001
-        pass
-    return None
+            # Tenta casar por Name ou DeviceID (mais persistente)
+            name = device_info.Properties("Name").Value
+            dev_id = device_info.DeviceID
+            
+            if name == device_identifier or dev_id == device_identifier:
+                try:
+                    return device_info.Connect(), None
+                except Exception as e:
+                    return None, f"Erro no Connect(): {e}"
+        return None, "Scanner não encontrado na lista do Windows."
+    except Exception as e:
+        return None, f"Erro no DeviceManager: {e}"
 
 
 def scan_page(device_name: str, dpi: int = 200) -> tuple[Optional[Image.Image], Optional[str]]:
@@ -51,9 +62,9 @@ def scan_page(device_name: str, dpi: int = 200) -> tuple[Optional[Image.Image], 
     Retorna (imagem PIL, None) em caso de sucesso ou (None, erro_str) em caso de falha.
     """
     try:
-        device = _get_wia_device(device_name)
+        device, err_conn = _get_wia_device(device_name)
         if device is None:
-            return None, "Não foi possível conectar ao scanner selecionado."
+            return None, err_conn or "Não foi possível conectar ao scanner selecionado."
 
         # Busca o item de digitalização correto (WIA 2.0 geralmente usa Items[1], mas scanners de rede podem variar)
         scan_item = None
@@ -104,6 +115,7 @@ def scan_with_dialog() -> Optional[Image.Image]:
     Abre o diálogo nativo do WIA para selecionar scanner e escanear.
     Útil como fallback quando o scanner não está pré-configurado.
     """
+    pythoncom.CoInitialize()
     try:
         import win32com.client  # type: ignore[import-untyped]
         dialog = win32com.client.Dispatch("WIA.CommonDialog")
