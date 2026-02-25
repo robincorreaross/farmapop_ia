@@ -115,6 +115,12 @@ class ResultScreen(ctk.CTkFrame):
                     settings=self.app.settings,
                 )
                 self.after(0, lambda: self._show_result(result))
+            except ValueError as e:
+                # Geralmente erro de API Key ou Provedor não configurado
+                if "Chave de API não configurada" in str(e) or "Provedor desconhecido" in str(e):
+                    self.after(0, self._show_no_ia_warning)
+                else:
+                    self.after(0, lambda: self._show_error(str(e)))
             except Exception as e:
                 self.after(0, lambda: self._show_error(str(e)))
 
@@ -597,14 +603,138 @@ class ResultScreen(ctk.CTkFrame):
             command=lambda: self.app.show_scan(self.transaction),
         ).grid(row=0, column=1, padx=8)
 
-    def _cancelar_auditoria_manual(self) -> None:
-        """Cancela auditoria manual e volta para a tela de reprovação."""
-        self._set_subtitle(
-            "Irregularidades detectadas. Revise os erros ou inicie uma Auditoria Manual."
-        )
+    # ── Fallback Manual (Sem IA) ────────────────────────────────────────────────
+    
+    def _show_no_ia_warning(self) -> None:
+        """Aviso de que não há IA configurada e pergunta se deseja modo manual."""
+        self._set_subtitle("Configuração de IA pendente.")
         self._clear_center()
-        if self.audit_result:
-            self._show_rejected(self.audit_result)
+        frame = ctk.CTkFrame(self.center, fg_color="transparent")
+        frame.place(relx=0.5, rely=0.5, anchor="center")
+
+        ctk.CTkLabel(frame, text="🤖❓", font=ctk.CTkFont(size=54)).pack(pady=8)
+
+        ctk.CTkLabel(
+            frame,
+            text="Nenhum Modelo de IA Detectado",
+            font=ctk.CTkFont(size=20, weight="bold"),
+            text_color="#FFB74D",
+        ).pack()
+
+        ctk.CTkLabel(
+            frame,
+            text=(
+                "Deseja prosseguir apenas com a digitalização?\n"
+                "Você precisará inserir os dados da transação manualmente."
+            ),
+            font=ctk.CTkFont(size=13),
+            text_color="#78909C",
+            wraplength=480,
+            justify="center",
+        ).pack(pady=12)
+
+        btn_container = ctk.CTkFrame(frame, fg_color="transparent")
+        btn_container.pack(pady=8)
+
+        ctk.CTkButton(
+            btn_container,
+            text="📝   Sim, Prosseguir Manual",
+            font=ctk.CTkFont(size=14, weight="bold"),
+            height=46,
+            width=220,
+            fg_color="#1565C0",
+            hover_color="#1E88E5",
+            command=self._show_manual_input_form,
+        ).grid(row=0, column=0, padx=8)
+
+        ctk.CTkButton(
+            btn_container,
+            text="⚙️   Configurar IA",
+            font=ctk.CTkFont(size=14),
+            height=46,
+            width=180,
+            fg_color="transparent",
+            border_width=1,
+            border_color="#37474F",
+            hover_color="#1E3A5F",
+            text_color="#78909C",
+            command=self.app.show_settings,
+        ).grid(row=0, column=1, padx=8)
+
+    def _show_manual_input_form(self) -> None:
+        """Formulário para preenchimento manual de autorização e data."""
+        self._set_subtitle("Preenchimento manual dos dados da transação.")
+        self._clear_center()
+        
+        frame = ctk.CTkFrame(self.center, fg_color="transparent")
+        frame.place(relx=0.5, rely=0.5, anchor="center")
+
+        ctk.CTkLabel(
+            frame,
+            text="📝 Entrada Manual",
+            font=ctk.CTkFont(size=20, weight="bold"),
+            text_color="#4FC3F7",
+        ).pack(pady=(0, 20))
+
+        # Autorização
+        ctk.CTkLabel(frame, text="Número de Autorização:", font=ctk.CTkFont(size=12)).pack(anchor="w", padx=2)
+        self.entry_auth = ctk.CTkEntry(
+            frame, 
+            placeholder_text="Ex: 111.111.111.111.111", 
+            width=320,
+            height=38
+        )
+        self.entry_auth.pack(pady=(2, 12))
+
+        # Data
+        ctk.CTkLabel(frame, text="Data da Transação:", font=ctk.CTkFont(size=12)).pack(anchor="w", padx=2)
+        self.entry_date = ctk.CTkEntry(
+            frame, 
+            placeholder_text="Ex: 01-01-2001", 
+            width=320,
+            height=38
+        )
+        self.entry_date.pack(pady=(2, 20))
+
+        ctk.CTkButton(
+            frame,
+            text="💾   Gerar e Salvar PDF",
+            font=ctk.CTkFont(size=15, weight="bold"),
+            height=50,
+            width=320,
+            fg_color="#2E7D32",
+            hover_color="#388E3C",
+            command=self._salvar_manual,
+        ).pack(pady=8)
+
+        ctk.CTkButton(
+            frame,
+            text="Cancelar e Voltar",
+            font=ctk.CTkFont(size=12),
+            fg_color="transparent",
+            text_color="#78909C",
+            command=self._show_no_ia_warning,
+        ).pack()
+
+    def _salvar_manual(self) -> None:
+        """Valida entradas manuais e gera o PDF."""
+        auth = self.entry_auth.get().strip()
+        date = self.entry_date.get().strip()
+        
+        if not auth or not date:
+            mb.showwarning("Campos Vazios", "Por favor, preencha todos os campos para salvar.")
+            return
+
+        # Simula um resultado de auditoria aprovado manualmente
+        from core.ai_auditor import AuditResult
+        dummy_result = AuditResult({
+            "aprovado": True,
+            "autorizacao": auth,
+            "data": date,
+            "observacoes": "Transação processada manualmente sem auditoria de IA."
+        })
+        self.audit_result = dummy_result
+        self._salvar_pdf()
 
     # ── Erro de conexão ──────────────────────────────────────────────────────────
 
