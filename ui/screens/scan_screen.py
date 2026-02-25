@@ -231,9 +231,13 @@ class ScanScreen(ctk.CTkFrame):
         def run():
             img = None
             if scanner_name:
-                img = scan_module.scan_page(scanner_name)
+                img, err = scan_module.scan_page(scanner_name)
+                if err:
+                    print(f"[ScanScreen] Falha no scan direto: {err}. Tentando diálogo...")
+            
             if img is None:
                 img = scan_module.scan_with_dialog()
+            
             self.after(0, lambda: self._on_image_captured(img))
 
         threading.Thread(target=run, daemon=True).start()

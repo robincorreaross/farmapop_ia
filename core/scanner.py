@@ -45,33 +45,58 @@ def _get_wia_device(device_name: str) -> object | None:
     return None
 
 
-def scan_page(device_name: str, dpi: int = 200) -> Optional[Image.Image]:
+def scan_page(device_name: str, dpi: int = 200) -> tuple[Optional[Image.Image], Optional[str]]:
     """
     Escaneia uma página usando WIA.
-    Retorna imagem PIL ou None em caso de falha.
+    Retorna (imagem PIL, None) em caso de sucesso ou (None, erro_str) em caso de falha.
     """
     try:
         device = _get_wia_device(device_name)
         if device is None:
-            return None
+            return None, "Não foi possível conectar ao scanner selecionado."
 
-        scan_item = device.Items[1]  # type: ignore[union-attr]
+        # Busca o item de digitalização correto (WIA 2.0 geralmente usa Items[1], mas scanners de rede podem variar)
+        scan_item = None
+        if device.Items.Count > 0:
+            # Tenta encontrar um item que tenha propriedades de resolução (típico de itens de scan)
+            for i in range(1, device.Items.Count + 1):
+                try:
+                    item = device.Items[i]
+                    # Se conseguirmos acessar a resolução, este provavelmente é o item de flatbed/feeder
+                    item.Properties("Horizontal Resolution")
+                    scan_item = item
+                    break
+                except Exception:
+                    continue
+        
+        if not scan_item:
+            # Fallback para o primeiro item se a busca falhar
+            try:
+                scan_item = device.Items[1]
+            except Exception:
+                return None, "O scanner não possui itens de digitalização disponíveis."
 
         try:
             scan_item.Properties("Horizontal Resolution").Value = dpi
             scan_item.Properties("Vertical Resolution").Value = dpi
-        except Exception:  # noqa: BLE001
-            pass
+        except Exception as e:
+            print(f"[Scanner] Aviso: Não foi possível definir DPI: {e}")
 
         # JPEG GUID
         image_file = scan_item.Transfer("{B96B3CAB-0728-11D3-9D7B-0000F81EF32E}")
         data = bytes(image_file.FileData.BinaryData)
         img = Image.open(io.BytesIO(data))
-        return img.convert("RGB")
+        return img.convert("RGB"), None
 
     except Exception as e:
-        print(f"[Scanner] Erro ao escanear: {e}")
-        return None
+        error_msg = str(e)
+        if "0x80210015" in error_msg:
+            error_msg = "Scanner offline ou desconectado (0x80210015)."
+        elif "0x8021001A" in error_msg:
+            error_msg = "Scanner ocupado ou em uso por outro programa (0x8021001A)."
+        
+        print(f"[Scanner] Erro ao escanear: {error_msg}")
+        return None, error_msg
 
 
 def scan_with_dialog() -> Optional[Image.Image]:

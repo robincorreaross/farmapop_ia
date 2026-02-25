@@ -347,14 +347,17 @@ class SettingsScreen(ctk.CTkFrame):
         self.lbl_scanner_status.configure(text="⌛  Realizando scan de teste...")
 
         def run():
-            img = scan_module.scan_page(scanner_name)
+            img, err = scan_module.scan_page(scanner_name)
             if img:
                 self.after(0, lambda: self.lbl_scanner_status.configure(
-                    text=f"✅  Scan de teste bem-sucedido! ({img.size[0]}x{img.size[1]} px)"
+                    text=f"✅  Scan de teste bem-sucedido! ({img.size[0]}x{img.size[1]} px)",
+                    text_color="#66BB6A"
                 ))
             else:
+                msg = f"❌  Falha no scan: {err}" if err else "❌  Falha no scan de teste. Verifique o scanner."
                 self.after(0, lambda: self.lbl_scanner_status.configure(
-                    text="❌  Falha no scan de teste. Verifique o scanner."
+                    text=msg,
+                    text_color="#EF5350"
                 ))
 
         threading.Thread(target=run, daemon=True).start()

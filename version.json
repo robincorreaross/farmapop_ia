@@ -1,11 +1,13 @@
 {
-  "version": "1.0.1",
+  "version": "1.0.2",
   "release_date": "2026-02-24",
   "download_zip_url": "https://github.com/robincorreaross/farmapop_ia/releases/latest/download/FarmaPop_IA.zip",
   "download_url": "https://github.com/robincorreaross/farmapop_ia/releases/latest",
   "changelog": [
-    "Removido aviso de extração automática na tela inicial",
-    "Melhorias no gerador de licenças"
+    "Correção profunda na comunicação com scanners (Brother LAN)",
+    "Busca dinâmica de itens WIA",
+    "Feedback detalhado de erro técnico do hardware",
+    "Melhoria na resiliência da digitalização"
   ],
   "mandatory": false
 }
