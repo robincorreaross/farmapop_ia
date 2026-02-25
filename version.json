@@ -1,13 +1,12 @@
 {
-  "version": "1.0.5",
+  "version": "1.0.6",
   "release_date": "2026-02-24",
   "download_zip_url": "https://github.com/robincorreaross/farmapop_ia/releases/latest/download/FarmaPop_IA.zip",
   "download_url": "https://github.com/robincorreaross/farmapop_ia/releases/latest",
   "changelog": [
-    "Novo: Fluxo de entrada manual quando a IA não está configurada",
-    "Correção: Travamento na tela de análise de documentos",
-    "Correção: Bug técnico que impedia a exibição do banner de atualização",
-    "Melhoria: Conexão aprimorada com scanners de rede (Brother LAN)"
+    "Novo: Validação rigorosa de formato para entrada manual (Regex)",
+    "Melhoria: Instruções visuais para os campos de Autorização e Data",
+    "Segurança: Bloqueio de salvamento para dados mal formatados"
   ],
   "mandatory": false
 }

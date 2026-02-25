@@ -5,6 +5,7 @@ Inclui modo de Auditoria Manual para revisão de falsos positivos.
 
 from __future__ import annotations
 
+import re
 import subprocess
 import threading
 import tkinter.messagebox as mb
@@ -677,22 +678,36 @@ class ResultScreen(ctk.CTkFrame):
         ).pack(pady=(0, 20))
 
         # Autorização
-        ctk.CTkLabel(frame, text="Número de Autorização:", font=ctk.CTkFont(size=12)).pack(anchor="w", padx=2)
+        ctk.CTkLabel(
+            frame, 
+            text="Número de Autorização (XXX.XXX.XXX.XXX.XXX):", 
+            font=ctk.CTkFont(size=12, weight="bold"),
+            text_color="#A5D6A7"
+        ).pack(anchor="w", padx=2)
+        
         self.entry_auth = ctk.CTkEntry(
             frame, 
-            placeholder_text="Ex: 111.111.111.111.111", 
+            placeholder_text="Ex: 111.222.333.444.555", 
             width=320,
-            height=38
+            height=38,
+            corner_radius=8
         )
         self.entry_auth.pack(pady=(2, 12))
 
         # Data
-        ctk.CTkLabel(frame, text="Data da Transação:", font=ctk.CTkFont(size=12)).pack(anchor="w", padx=2)
+        ctk.CTkLabel(
+            frame, 
+            text="Data da Transação (DD-MM-AAAA):", 
+            font=ctk.CTkFont(size=12, weight="bold"),
+            text_color="#A5D6A7"
+        ).pack(anchor="w", padx=2)
+        
         self.entry_date = ctk.CTkEntry(
             frame, 
-            placeholder_text="Ex: 01-01-2001", 
+            placeholder_text="Ex: 24-02-2026", 
             width=320,
-            height=38
+            height=38,
+            corner_radius=8
         )
         self.entry_date.pack(pady=(2, 20))
 
@@ -717,7 +732,7 @@ class ResultScreen(ctk.CTkFrame):
         ).pack()
 
     def _salvar_manual(self) -> None:
-        """Valida entradas manuais e gera o PDF."""
+        """Valida entradas manuais usando Regex e gera o PDF."""
         auth = self.entry_auth.get().strip()
         date = self.entry_date.get().strip()
         
@@ -725,13 +740,36 @@ class ResultScreen(ctk.CTkFrame):
             mb.showwarning("Campos Vazios", "Por favor, preencha todos os campos para salvar.")
             return
 
-        # Simula um resultado de auditoria aprovado manualmente
+        # Validação de Autorização: XXX.XXX.XXX.XXX.XXX (5 grupos de 3 números)
+        # Total de 15 dígitos + 4 pontos = 19 caracteres
+        pattern_auth = r"^\d{3}\.\d{3}\.\d{3}\.\d{3}\.\d{3}$"
+        if not re.match(pattern_auth, auth):
+            mb.showerror(
+                "Formato Inválido", 
+                "A Autorização deve ter exatamente 15 números divididos em 5 grupos de 3.\n\n"
+                "Formato Correto: XXX.XXX.XXX.XXX.XXX\n"
+                "Exemplo: 111.222.333.444.555"
+            )
+            return
+
+        # Validação de Data: DD-MM-AAAA
+        pattern_date = r"^\d{2}-\d{2}-\d{4}$"
+        if not re.match(pattern_date, date):
+            mb.showerror(
+                "Formato Inválido", 
+                "A Data deve seguir o formato dia-mês-ano com hífens.\n\n"
+                "Formato Correto: DD-MM-AAAA\n"
+                "Exemplo: 24-02-2026"
+            )
+            return
+
+        # Tudo OK -> Prosseguir
         from core.ai_auditor import AuditResult
         dummy_result = AuditResult({
             "aprovado": True,
             "autorizacao": auth,
             "data": date,
-            "observacoes": "Transação processada manualmente sem auditoria de IA."
+            "observacoes": "Transação processada manualmente (Validação de formato OK)."
         })
         self.audit_result = dummy_result
         self._salvar_pdf()
