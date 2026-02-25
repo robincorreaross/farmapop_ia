@@ -3,15 +3,15 @@
 [Setup]
 AppId={{B4C9E2F1-7A3D-4E8B-92F0-1D5A6C8E3B7F}
 AppName=FarmaPop IA
-AppVersion=1.0.0
-AppVerName=FarmaPop IA v1.0.0
+AppVersion=1.0.5
+AppVerName=FarmaPop IA v1.0.5
 AppPublisher=Ross Sistemas
 AppPublisherURL=https://github.com/robincorreaross/farmapop_ia
 DefaultDirName={autopf}\FarmaPop IA
 DefaultGroupName=FarmaPop IA
 DisableProgramGroupPage=yes
 OutputDir=installer
-OutputBaseFilename=FarmaPop_IA_Setup_v1.0.0
+OutputBaseFilename=FarmaPop_IA_Setup_v1.0.5
 WizardStyle=modern
 Compression=lzma2
 SolidCompression=yes

@@ -46,13 +46,28 @@ if errorlevel 1 (
 )
 
 echo.
+echo [4/4] Criando pacote ZIP para auto-update...
+set ZIP_NAME=FarmaPop_IA.zip
+if exist "installer\%ZIP_NAME%" del "installer\%ZIP_NAME%"
+powershell -Command "Compress-Archive -Path 'dist\FarmaPop_IA\*' -DestinationPath 'installer\%ZIP_NAME%' -Force"
+if errorlevel 1 (
+    echo ERRO: falha ao gerar o arquivo ZIP.
+    pause & exit /b 1
+)
+echo     OK - installer\%ZIP_NAME%
+
+echo.
 echo ============================================================
 echo   BUILD COMPLETO!
 echo ============================================================
 echo.
-echo  Instalador: installer\FarmaPop_IA_Setup_v1.0.0.exe
-echo  Gerador:    dist_tools\GeradorLicencas.exe (SOMENTE DEV)
+echo  Instalador:  installer\FarmaPop_IA_Setup_v1.0.0.exe
+echo  Auto-update: installer\FarmaPop_IA.zip
+echo  Gerador:     dist_tools\GeradorLicencas.exe (SOMENTE DEV)
 echo.
-echo  Envie ao cliente: installer\FarmaPop_IA_Setup_v*.exe
+echo  IMPORTANTE: 
+echo  1. Envie o .exe para novos clientes.
+echo  2. Carregue o .zip no GitHub Releases como 'FarmaPop_IA.zip'
+echo     para que os clientes atuais recebam a v%APP_VERSION% automaticamente.
 echo ============================================================
 pause
