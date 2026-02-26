@@ -685,8 +685,12 @@ class ResultScreen(ctk.CTkFrame):
             text_color="#A5D6A7"
         ).pack(anchor="w", padx=2)
         
+        self.var_auth = ctk.StringVar()
+        self.var_auth.trace_add("write", self._aplicar_mascara_auth)
+        
         self.entry_auth = ctk.CTkEntry(
             frame, 
+            textvariable=self.var_auth,
             placeholder_text="Ex: 111.222.333.444.555", 
             width=320,
             height=38,
@@ -702,8 +706,12 @@ class ResultScreen(ctk.CTkFrame):
             text_color="#A5D6A7"
         ).pack(anchor="w", padx=2)
         
+        self.var_date = ctk.StringVar()
+        self.var_date.trace_add("write", self._aplicar_mascara_data)
+
         self.entry_date = ctk.CTkEntry(
             frame, 
+            textvariable=self.var_date,
             placeholder_text="Ex: 24-02-2026", 
             width=320,
             height=38,
@@ -773,6 +781,79 @@ class ResultScreen(ctk.CTkFrame):
         })
         self.audit_result = dummy_result
         self._salvar_pdf()
+
+    def _aplicar_mascara_auth(self, *args: object) -> None:
+        """Formata a autorização como XXX.XXX.XXX.XXX.XXX preservando o cursor com reforço (after)."""
+        texto_atual = self.var_auth.get()
+        entry_widget = self.entry_auth._entry
+        
+        # 1. Salva estado do cursor relativo aos dígitos
+        try:
+            pos_cursor = entry_widget.index("insert")
+        except Exception:
+            pos_cursor = len(texto_atual)
+            
+        texto_antes_cursor = texto_atual[:pos_cursor]
+        digitos_antes = sum(1 for c in texto_antes_cursor if c.isdigit())
+        
+        # 2. Gera novo texto formatado
+        apenas_nums = "".join(filter(str.isdigit, texto_atual))[:15]
+        blocos = [apenas_nums[i:i+3] for i in range(0, len(apenas_nums), 3)]
+        novo_texto = ".".join(blocos)
+        
+        # 3. Só aplica se houver mudança REAL
+        if texto_atual != novo_texto:
+            self.var_auth.set(novo_texto)
+            
+            # 4. Calcula nova posição do cursor mapeando os dígitos
+            nova_pos = 0
+            digitos_contados = 0
+            for i, char in enumerate(novo_texto):
+                if digitos_contados >= digitos_antes:
+                    break
+                if char.isdigit():
+                    digitos_contados = digitos_contados + 1
+                nova_pos = i + 1
+            
+            # 5. Força o cursor na posição correta com um pequeno atraso
+            # Isso impede que o Tkinter sobrescreva nossa posição após o trace
+            entry_widget.after(10, lambda: entry_widget.icursor(nova_pos))
+
+    def _aplicar_mascara_data(self, *args: object) -> None:
+        """Formata a data como DD-MM-AAAA preservando o cursor com reforço (after)."""
+        texto_atual = self.var_date.get()
+        entry_widget = self.entry_date._entry
+        
+        try:
+            pos_cursor = entry_widget.index("insert")
+        except Exception:
+            pos_cursor = len(texto_atual)
+            
+        texto_antes_cursor = texto_atual[:pos_cursor]
+        digitos_antes = sum(1 for c in texto_antes_cursor if c.isdigit())
+        
+        apenas_nums = "".join(filter(str.isdigit, texto_atual))[:8]
+        novo_texto = ""
+        if len(apenas_nums) > 0:
+            novo_texto += apenas_nums[:2]
+        if len(apenas_nums) > 2:
+            novo_texto += "-" + apenas_nums[2:4]
+        if len(apenas_nums) > 4:
+            novo_texto += "-" + apenas_nums[4:8]
+            
+        if texto_atual != novo_texto:
+            self.var_date.set(novo_texto)
+            
+            nova_pos = 0
+            digitos_contados = 0
+            for i, char in enumerate(novo_texto):
+                if digitos_contados >= digitos_antes:
+                    break
+                if char.isdigit():
+                    digitos_contados = digitos_contados + 1
+                nova_pos = i + 1
+                
+            entry_widget.after(10, lambda: entry_widget.icursor(nova_pos))
 
     # ── Erro de conexão ──────────────────────────────────────────────────────────
 

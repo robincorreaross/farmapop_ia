@@ -95,13 +95,13 @@ def criar_transacao_proprio_paciente() -> Transaction:
         nome_tipo="Próprio Paciente",
         etapas=[
             ScanStep(
-                id="cupom",
-                titulo="Cupom Fiscal + Cupom Vinculado",
+                id="id_paciente",
+                titulo="Documento de Identificação do Paciente",
                 descricao=(
-                    "Digitalize o Cupom Fiscal e o Cupom Vinculado do programa.\n"
-                    "O Cupom Vinculado deve conter o endereço do beneficiário e estar assinado."
+                    "Digitalize o documento de identificação com foto do paciente.\n"
+                    "O documento deve conter o número do CPF."
                 ),
-                icone="🧾",
+                icone="🪪",
             ),
             ScanStep(
                 id="receita",
@@ -113,13 +113,13 @@ def criar_transacao_proprio_paciente() -> Transaction:
                 icone="📋",
             ),
             ScanStep(
-                id="id_paciente",
-                titulo="Documento de Identificação do Paciente",
+                id="cupom",
+                titulo="Cupom Fiscal + Cupom Vinculado",
                 descricao=(
-                    "Digitalize o documento de identificação com foto do paciente.\n"
-                    "O documento deve conter o número do CPF."
+                    "Digitalize o Cupom Fiscal e o Cupom Vinculado do programa.\n"
+                    "O Cupom Vinculado deve conter o endereço do beneficiário e estar assinado."
                 ),
-                icone="🪪",
+                icone="🧾",
             ),
         ],
     )
@@ -131,24 +131,6 @@ def criar_transacao_procurador() -> Transaction:
         tipo=2,
         nome_tipo="Procurador",
         etapas=[
-            ScanStep(
-                id="cupom",
-                titulo="Cupom Fiscal + Cupom Vinculado",
-                descricao=(
-                    "Digitalize o Cupom Fiscal e o Cupom Vinculado do programa.\n"
-                    "O Cupom Vinculado deve conter o endereço do beneficiário e estar assinado."
-                ),
-                icone="🧾",
-            ),
-            ScanStep(
-                id="receita",
-                titulo="Receita Médica e/ou Laudo Médico",
-                descricao=(
-                    "Digitalize a Receita Médica e/ou o Laudo Médico.\n"
-                    "Verifique se contém assinatura, carimbo e CRM do médico."
-                ),
-                icone="📋",
-            ),
             ScanStep(
                 id="id_paciente",
                 titulo="Documento de Identificação do Paciente",
@@ -177,6 +159,24 @@ def criar_transacao_procurador() -> Transaction:
                 ),
                 icone="📜",
             ),
+            ScanStep(
+                id="receita",
+                titulo="Receita Médica e/ou Laudo Médico",
+                descricao=(
+                    "Digitalize a Receita Médica e/ou o Laudo Médico.\n"
+                    "Verifique se contém assinatura, carimbo e CRM do médico."
+                ),
+                icone="📋",
+            ),
+            ScanStep(
+                id="cupom",
+                titulo="Cupom Fiscal + Cupom Vinculado",
+                descricao=(
+                    "Digitalize o Cupom Fiscal e o Cupom Vinculado do programa.\n"
+                    "O Cupom Vinculado deve conter o endereço do beneficiário e estar assinado."
+                ),
+                icone="🧾",
+            ),
         ],
     )
 
@@ -188,13 +188,19 @@ def criar_transacao_menor_de_idade() -> Transaction:
         nome_tipo="Menor de Idade",
         etapas=[
             ScanStep(
-                id="cupom",
-                titulo="Cupom Fiscal + Cupom Vinculado",
+                id="id_paciente",
+                titulo="Documento do Paciente ou Certidão de Nascimento",
+                descricao="Digitalize o documento de identificação do menor (RG ou Certidão de Nascimento).",
+                icone="🪪",
+            ),
+            ScanStep(
+                id="id_responsavel",
+                titulo="Documento de Identificação do Responsável",
                 descricao=(
-                    "Digitalize o Cupom Fiscal e o Cupom Vinculado do programa.\n"
-                    "O Cupom Vinculado deve conter o endereço do beneficiário e estar assinado."
+                    "Digitalize o documento de identificação with foto do responsável legal "
+                    "(pai, mãe ou tutor).\nO documento deve conter o número do CPF."
                 ),
-                icone="🧾",
+                icone="🪪",
             ),
             ScanStep(
                 id="receita",
@@ -206,19 +212,13 @@ def criar_transacao_menor_de_idade() -> Transaction:
                 icone="📋",
             ),
             ScanStep(
-                id="id_paciente",
-                titulo="Documento do Paciente ou Certidão de Nascimento",
-                descricao="Digitalize o documento de identificação do menor (RG ou Certidão de Nascimento).",
-                icone="🪪",
-            ),
-            ScanStep(
-                id="id_responsavel",
-                titulo="Documento de Identificação do Responsável",
+                id="cupom",
+                titulo="Cupom Fiscal + Cupom Vinculado",
                 descricao=(
-                    "Digitalize o documento de identificação com foto do responsável legal "
-                    "(pai, mãe ou tutor).\nO documento deve conter o número do CPF."
+                    "Digitalize o Cupom Fiscal e o Cupom Vinculado do programa.\n"
+                    "O Cupom Vinculado deve conter o endereço do beneficiário e estar assinado."
                 ),
-                icone="🪪",
+                icone="🧾",
             ),
         ],
     )

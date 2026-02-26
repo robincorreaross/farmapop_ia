@@ -1,12 +1,12 @@
 {
-  "version": "1.1.7",
+  "version": "2.1.3",
   "release_date": "2026-02-25",
   "download_zip_url": "https://github.com/robincorreaross/farmapop_ia/releases/latest/download/FarmaPop_IA.zip",
   "download_url": "https://github.com/robincorreaross/farmapop_ia/releases/latest",
   "changelog": [
-    "Performance: Navegação instantânea para a tela de ajuda (resolvido lag de rede)",
-    "Sistema: Implementado cache de licença para evitar requisições repetitivas",
-    "Estabilidade: Verificação de licença agora ocorre em background no startup"
+    "Correção Final: Implementado atraso de sincronia (after_idle) para o cursor das máquinas",
+    "Estabilidade: Resolvido conflito entre o sistema de máscaras e o motor de renderização do Windows",
+    "UX: Digitação agora é 100% estável e o cursor respeita a posição exata, mesmo em PCs lentos"
   ],
   "mandatory": true
 }
