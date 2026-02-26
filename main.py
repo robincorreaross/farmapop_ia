@@ -19,15 +19,19 @@ from core.license import LicenseError, get_machine_id, validar_licenca, carregar
 def _verificar_licenca(settings: dict) -> tuple[bool, str]:  # type: ignore[type-arg]
     """
     Retorna (valida, mensagem_erro).
+    Tenta validar online primeiro (via ID da máquina), depois offline (via chave salva).
     """
     chave = carregar_licenca(settings)
-    if not chave:
-        return False, ""
+    
+    # validar_licenca agora é híbrida: tenta online(mid) e depois offline(key)
     try:
-        validar_licenca(chave)
-        return True, ""
+        # Passamos a chave salva (pode ser vazia para novos clientes online)
+        res = validar_licenca(chave or "")
+        return res.get("valido", False), ""
     except LicenseError as e:
         return False, str(e)
+    except Exception as e:
+        return False, f"Erro inesperado na validação: {e}"
 
 
 def main() -> None:
@@ -43,21 +47,24 @@ def main() -> None:
         app = App()
         app.mainloop()
     else:
-        # Sem licença ou expirada → abre tela de ativação
-        from ui.screens.license_screen import LicenseScreen, LicenseExpiredScreen
+        # Sem licença ou erro → abre tela de ativação dinâmica
+        from ui.screens.license_screen import LicenseScreen
 
         def _abrir_app() -> None:
             from ui.app import App
             app = App()
             app.mainloop()
 
-        if msg_erro:
-            # Licença expirada ou inválida
-            screen = LicenseExpiredScreen(settings, _abrir_app, msg_extra=msg_erro)
-        else:
-            # Nunca foi ativado
-            screen = LicenseScreen(settings, _abrir_app)
+        # Determina o estado baseado na mensagem de erro
+        estado = "padrao"
+        if "novo" in msg_erro.lower():
+            estado = "novo"
+        elif "expirou" in msg_erro.lower():
+            estado = "expirado"
+        elif "inativa" in msg_erro.lower():
+            estado = "inativo"
 
+        screen = LicenseScreen(settings, _abrir_app, estado=estado, msg_extra=msg_erro if estado == "padrao" else "")
         screen.mainloop()
 
 

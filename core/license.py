@@ -12,6 +12,7 @@ import base64
 import hashlib
 import hmac
 import json
+import os
 import platform
 import uuid
 from datetime import date, datetime, timedelta
@@ -92,10 +93,109 @@ def gerar_licenca(machine_id_display: str, meses: int = 1) -> str:
     return key
 
 
+import urllib.request
+import urllib.parse
+
 # ─── Validação de licença ─────────────────────────────────────────────────────
 
 class LicenseError(Exception):
     """Erro específico de licença inválida ou expirada."""
+
+
+def verificar_licenca_online(machine_id: str) -> Optional[dict]:
+    """
+    Tenta validar a licença pela API do Google Sheets.
+    Retorna dict com dados se válido, None se não encontrado ou erro.
+    """
+    try:
+        # Tenta importar a URL da versão de forma resiliente
+        license_url = None
+        try:
+            from version import LICENSE_API_URL
+            license_url = LICENSE_API_URL
+        except ImportError:
+            try:
+                import sys
+                from pathlib import Path
+                root = Path(__file__).parent.parent
+                if str(root) not in sys.path:
+                    sys.path.append(str(root))
+                from version import LICENSE_API_URL
+                license_url = LICENSE_API_URL
+            except:
+                pass
+            
+        if not license_url:
+            print("[DEBUG] LICENSE_API_URL não encontrada no version.py")
+            return None
+        
+        mid_clean = machine_id.strip().upper()
+        # Debug console
+        url = f"{license_url}?machineId={urllib.parse.quote(mid_clean)}"
+        print(f"[DEBUG] Tentando conexão: {url}")
+        
+        # Google as vezes exige um User-Agent de navegador para não dar 403
+        headers = {
+            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
+        }
+        req = urllib.request.Request(url, headers=headers)
+        
+        with urllib.request.urlopen(req, timeout=20) as response:
+            if response.getcode() == 200:
+                raw_res = response.read().decode()
+                res_data = json.loads(raw_res)
+                
+                if res_data.get("valido"):
+                    # ... [mesma lógica de validação de expiração] ...
+                    print(f"[DEBUG] Licença ONLINE confirmada para {mid_clean}")
+                    
+                    exp_str = res_data.get("expiry", "")
+                    expiry_date = None
+                    display_exp = str(exp_str)
+                    
+                    if exp_str and str(exp_str).lower() != "vitalício":
+                        for fmt in ("%Y-%m-%d", "%d/%m/%Y", "%Y/%m/%d"):
+                            try:
+                                date_part = str(exp_str).replace("T", " ").split(" ")[0]
+                                expiry_date = datetime.strptime(date_part, fmt).date()
+                                display_exp = expiry_date.strftime("%d/%m/%Y")
+                                break
+                            except:
+                                continue
+                        
+                        if expiry_date and date.today() > expiry_date:
+                            print(f"[DEBUG] Licença ONLINE ignorada: Expirou em {expiry_date}")
+                            raise LicenseError("Sua licença expirou. Entre em contato para renovar.")
+                    
+                    dias_restantes = 999
+                    if expiry_date:
+                        dias_restantes = (expiry_date - date.today()).days
+                        
+                    return {
+                        "valido": True,
+                        "expiry": display_exp or "Vitalício",
+                        "dias_restantes": dias_restantes,
+                        "cliente": res_data.get("cliente", "Cliente Online"),
+                        "metodo": "online"
+                    }
+                else:
+                    status_servidor = res_data.get("status", "").lower()
+                    msg_servidor = res_data.get("erro", "").lower()
+                    
+                    if "inativo" in status_servidor or "inativa" in msg_servidor:
+                        raise LicenseError("Sua licença está inativa. Entre em contato com o administrador.")
+                    elif "não encontrado" in msg_servidor:
+                        # Este é o caso de Primeira Instalação
+                        raise LicenseError("status:novo") 
+                    else:
+                        raise LicenseError(res_data.get("erro", "Aguardando liberação do administrador."))
+            else:
+                print(f"[DEBUG] Servidor Google retornou erro HTTP: {response.getcode()}")
+    except LicenseError:
+        raise
+    except Exception as e:
+        print(f"[DEBUG] Erro na comunicação de licença: {e}")
+    return None
 
 
 def _decode_key(key: str) -> tuple[str, str]:
@@ -125,7 +225,9 @@ def _decode_key(key: str) -> tuple[str, str]:
 
 def validar_licenca(key: str) -> dict:  # type: ignore[type-arg]
     """
-    Valida a chave de licença para esta máquina.
+    Valida a chave de licença para esta máquina de forma HÍBRIDA.
+    1. Tenta Online via MachineID.
+    2. Se não disponível/não encontrado, tenta validar a chave (key) offline.
 
     Returns:
         dict com {"valido": True, "expiry": "AAAA-MM-DD", "dias_restantes": N}
@@ -133,6 +235,22 @@ def validar_licenca(key: str) -> dict:  # type: ignore[type-arg]
     Raises:
         LicenseError com mensagem amigável em caso de falha.
     """
+    mid_display = get_machine_id()
+    
+    # 1. TENTATIVA ONLINE (Prioridade)
+    online_res = verificar_licenca_online(mid_display)
+    if online_res:
+        return {
+            "valido": True,
+            "expiry": online_res["expiry"],
+            "dias_restantes": online_res.get("dias_restantes", 30),
+            "metodo": "online"
+        }
+
+    # 2. TENTATIVA OFFLINE (Fallback para clientes antigos ou sem internet)
+    if not key:
+        raise LicenseError("Nenhuma licença encontrada. Entre em contato para ativar.")
+
     payload_str, sig_recebida = _decode_key(key)
 
     # Verifica assinatura
@@ -176,8 +294,9 @@ def validar_licenca(key: str) -> dict:  # type: ignore[type-arg]
     dias_restantes = (expiry - today).days
     return {
         "valido": True,
-        "expiry": exp_str,
+        "expiry": expiry.strftime("%d/%m/%Y"), # Formato brasileiro
         "dias_restantes": dias_restantes,
+        "metodo": "offline"
     }
 
 

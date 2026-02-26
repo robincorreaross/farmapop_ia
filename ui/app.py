@@ -24,12 +24,14 @@ class App(ctk.CTk):
         self.settings = load_settings()
         self.current_transaction = None
         self._update_zip_url: str = ""  # URL do ZIP da nova versão (preenchido ao detectar update)
+        self._license_cache: dict | None = None  # Cache global para evitar lag na UI (v1.1.7)
 
         self._build_layout()
         self.show_home()
 
-        # Verifica atualizações em background após 1 segundo (não trava o startup)
+        # Verificações em background após 1 segundo
         self.after(1000, self._iniciar_verificacao_update)
+        self.after(1500, self._verificar_expiracao_proxima)
 
     # ── Layout ───────────────────────────────────────────────────────────────────
 
@@ -37,6 +39,11 @@ class App(ctk.CTk):
         """Monta o layout base: sidebar + área de conteúdo."""
         self.grid_columnconfigure(1, weight=1)
         self.grid_rowconfigure(1, weight=1)  # row 0 = banner de update
+
+        # ── Banner de Alerta de Expiração (Novo v1.1.4) ──────────────────────
+        self._expiration_banner = ctk.CTkFrame(self, height=0, fg_color="#FF9800", corner_radius=0)
+        self._expiration_banner.grid(row=0, column=0, columnspan=2, sticky="ew")
+        self._expiration_banner.grid_remove() # Inicia escondido
 
         # Banner de atualização (oculto inicialmente)
         self._update_banner = ctk.CTkFrame(self, fg_color="#0D2B0D", height=42, corner_radius=0)
@@ -93,12 +100,24 @@ class App(ctk.CTk):
         )
         self.btn_settings.grid(row=3, column=0, padx=12, pady=4, sticky="ew")
 
+        self.btn_help = ctk.CTkButton(
+            self.sidebar,
+            text="  ❓  Ajuda e Suporte",
+            font=ctk.CTkFont(size=13),
+            anchor="w",
+            corner_radius=8,
+            fg_color="transparent",
+            hover_color="#1E3A5F",
+            command=self.show_help,
+        )
+        self.btn_help.grid(row=4, column=0, padx=12, pady=4, sticky="ew")
+
         # Rodapé com versão
         ctk.CTkLabel(
             self.sidebar,
             text=f"v{APP_VERSION}",
             font=ctk.CTkFont(size=10),
-            text_color="#37474F",
+            text_color="#B0BEC5",
         ).grid(row=11, column=0, padx=16, pady=12, sticky="sw")
 
         # ── Área de conteúdo ─────────────────────────────────────────────────
@@ -110,6 +129,52 @@ class App(ctk.CTk):
         self._current_screen = None
 
     # ── Sistema de update ────────────────────────────────────────────────────────
+
+    def _verificar_expiracao_proxima(self) -> None:
+        """Verifica licença online, alimenta o cache e mostra banner se faltar <= 3 dias."""
+        try:
+            from core.license import validar_licenca, carregar_licenca
+            key = carregar_licenca(self.settings)
+            info = validar_licenca(key or "")
+            
+            # Alimenta o cache global para as telas (v1.1.7)
+            self._license_cache = info
+            
+            dias = info.get("dias_restantes", 999)
+            if 0 <= dias <= 3:
+                self._mostrar_banner_expiracao(dias)
+        except Exception as e:
+            print(f"[DEBUG] Falha na verificação de expiração/cache: {e}")
+
+    def _mostrar_banner_expiracao(self, dias: int) -> None:
+        """Exibe o banner laranja de aviso de expiração."""
+        for w in self._expiration_banner.winfo_children():
+            w.destroy()
+            
+        self._expiration_banner.grid()
+        
+        msg = f"⚠️ Sua licença expira em {dias} dia(s)! Clique aqui para renovar agora." if dias > 0 else "⚠️ Sua licença expira HOJE! Renove agora para não parar."
+        
+        btn = ctk.CTkButton(
+            self._expiration_banner,
+            text=msg,
+            font=ctk.CTkFont(size=12, weight="bold"),
+            fg_color="transparent",
+            hover_color="#E68A00",
+            text_color="white",
+            anchor="center",
+            command=self._abrir_whatsapp_renovacao
+        )
+        btn.pack(fill="x", ipady=5)
+
+    def _abrir_whatsapp_renovacao(self) -> None:
+        import webbrowser
+        import urllib.parse
+        from core.license import get_machine_id
+        mid = get_machine_id()
+        msg = f"Olá Robinson, minha licença do FarmaPop IA está vencendo e gostaria de renovar. Meu ID: {mid}"
+        url = f"https://wa.me/5516991080895?text={urllib.parse.quote(msg)}"
+        webbrowser.open(url)
 
     def _iniciar_verificacao_update(self) -> None:
         """Dispara a verificação de update em background."""
@@ -269,7 +334,7 @@ class App(ctk.CTk):
     # ── Navegação ────────────────────────────────────────────────────────────────
 
     def _set_active_btn(self, active_btn: ctk.CTkButton) -> None:
-        for btn in [self.btn_home, self.btn_settings]:
+        for btn in [self.btn_home, self.btn_settings, self.btn_help]:
             btn.configure(fg_color="transparent")
         active_btn.configure(fg_color="#1E3A5F")
 
@@ -297,6 +362,11 @@ class App(ctk.CTk):
         from ui.screens.settings_screen import SettingsScreen
         self._set_active_btn(self.btn_settings)
         self._show_screen(SettingsScreen)
+
+    def show_help(self) -> None:
+        from ui.screens.help_screen import HelpScreen
+        self._set_active_btn(self.btn_help)
+        self._show_screen(HelpScreen)
 
     def update_settings(self, new_settings: dict[str, Any]) -> None:
         self.settings = new_settings
