@@ -98,7 +98,19 @@ class App(ctk.CTk):
             hover_color="#1E3A5F",
             command=self.show_settings,
         )
-        self.btn_settings.grid(row=3, column=0, padx=12, pady=4, sticky="ew")
+        self.btn_settings.grid(row=4, column=0, padx=12, pady=4, sticky="ew")
+
+        self.btn_search_doc = ctk.CTkButton(
+            self.sidebar,
+            text="  🔍  Procurar Documento",
+            font=ctk.CTkFont(size=13),
+            anchor="w",
+            corner_radius=8,
+            fg_color="transparent",
+            hover_color="#1E3A5F",
+            command=self.show_search_doc,
+        )
+        self.btn_search_doc.grid(row=3, column=0, padx=12, pady=4, sticky="ew")
 
         self.btn_help = ctk.CTkButton(
             self.sidebar,
@@ -110,7 +122,7 @@ class App(ctk.CTk):
             hover_color="#1E3A5F",
             command=self.show_help,
         )
-        self.btn_help.grid(row=4, column=0, padx=12, pady=4, sticky="ew")
+        self.btn_help.grid(row=5, column=0, padx=12, pady=4, sticky="ew")
 
         # Rodapé com versão
         ctk.CTkLabel(
@@ -334,7 +346,7 @@ class App(ctk.CTk):
     # ── Navegação ────────────────────────────────────────────────────────────────
 
     def _set_active_btn(self, active_btn: ctk.CTkButton) -> None:
-        for btn in [self.btn_home, self.btn_settings, self.btn_help]:
+        for btn in [self.btn_home, self.btn_search_doc, self.btn_settings, self.btn_help]:
             btn.configure(fg_color="transparent")
         active_btn.configure(fg_color="#1E3A5F")
 
@@ -362,6 +374,11 @@ class App(ctk.CTk):
         from ui.screens.settings_screen import SettingsScreen
         self._set_active_btn(self.btn_settings)
         self._show_screen(SettingsScreen)
+
+    def show_search_doc(self) -> None:
+        from ui.screens.search_document_screen import SearchDocumentScreen
+        self._set_active_btn(self.btn_search_doc)
+        self._show_screen(SearchDocumentScreen)
 
     def show_help(self) -> None:
         from ui.screens.help_screen import HelpScreen

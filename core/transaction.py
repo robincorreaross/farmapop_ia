@@ -18,6 +18,8 @@ class ScanStep:
     descricao: str
     icone: str = "📄"
     imagens: List[Image.Image] = field(default_factory=list)
+    require_cpf: bool = False
+    cpf: str = ""
 
     def adicionar_imagem(self, imagem: Image.Image) -> None:
         self.imagens.append(imagem)
@@ -102,6 +104,7 @@ def criar_transacao_proprio_paciente() -> Transaction:
                     "O documento deve conter o número do CPF."
                 ),
                 icone="🪪",
+                require_cpf=True,
             ),
             ScanStep(
                 id="receita",
@@ -139,6 +142,7 @@ def criar_transacao_procurador() -> Transaction:
                     "O documento deve conter o número do CPF."
                 ),
                 icone="🪪",
+                require_cpf=True,
             ),
             ScanStep(
                 id="id_procurador",
@@ -148,6 +152,7 @@ def criar_transacao_procurador() -> Transaction:
                     "O documento deve conter o número do CPF."
                 ),
                 icone="🪪",
+                require_cpf=True,
             ),
             ScanStep(
                 id="procuracao",
@@ -192,6 +197,7 @@ def criar_transacao_menor_de_idade() -> Transaction:
                 titulo="Documento do Paciente ou Certidão de Nascimento",
                 descricao="Digitalize o documento de identificação do menor (RG ou Certidão de Nascimento).",
                 icone="🪪",
+                require_cpf=True,
             ),
             ScanStep(
                 id="id_responsavel",
@@ -201,6 +207,7 @@ def criar_transacao_menor_de_idade() -> Transaction:
                     "(pai, mãe ou tutor).\nO documento deve conter o número do CPF."
                 ),
                 icone="🪪",
+                require_cpf=True,
             ),
             ScanStep(
                 id="receita",
