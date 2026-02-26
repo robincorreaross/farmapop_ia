@@ -917,7 +917,6 @@ class ResultScreen(ctk.CTkFrame):
                 "PDF Salvo",
                 f"Arquivo salvo com sucesso:\n{path}",
             )
-            subprocess.Popen(f'explorer /select,"{path}"')
             self.app.show_home()
         except Exception as e:
             mb.showerror("Erro ao salvar PDF", str(e))
