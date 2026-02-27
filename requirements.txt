@@ -8,3 +8,4 @@ pywin32>=306
 python-dotenv>=1.0.0
 cryptography>=42.0.0
 tkcalendar>=1.6.1
+pymupdf>=1.24.0

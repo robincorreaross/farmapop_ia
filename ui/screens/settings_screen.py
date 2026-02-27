@@ -84,7 +84,12 @@ class SettingsScreen(ctk.CTkFrame):
         providers_frame = ctk.CTkFrame(section, fg_color="transparent")
         providers_frame.grid(row=1, column=0, sticky="ew", padx=4, pady=(0, 12))
 
-        for i, (pid, label) in enumerate([("gemini", "Google Gemini"), ("openai", "OpenAI"), ("anthropic", "Anthropic")]):
+        for i, (pid, label) in enumerate([
+            ("gemini", "Google Gemini"), 
+            ("openai", "OpenAI"), 
+            ("anthropic", "Anthropic"),
+            ("openrouter", "OpenRouter")
+        ]):
             ctk.CTkRadioButton(
                 providers_frame,
                 text=label,
@@ -92,7 +97,7 @@ class SettingsScreen(ctk.CTkFrame):
                 value=pid,
                 font=ctk.CTkFont(size=13),
                 command=self._on_provider_change,
-            ).grid(row=0, column=i, padx=16, sticky="w")
+            ).grid(row=0, column=i, padx=12, sticky="w")
 
         # Chave de API
         ctk.CTkLabel(section, text="Chave de API:", font=ctk.CTkFont(size=12), text_color="#90A4AE").grid(
@@ -144,6 +149,14 @@ class SettingsScreen(ctk.CTkFrame):
             height=38,
         )
         self.model_combo.grid(row=0, column=0, sticky="ew", padx=(0, 8))
+        
+        # Info sobre modelos customizados
+        ctk.CTkLabel(
+            section, 
+            text="💡 Para OpenRouter, você pode digitar o ID do modelo (ex: deepseek/deepseek-chat)", 
+            font=ctk.CTkFont(size=10), 
+            text_color="#546E7A"
+        ).grid(row=6, column=0, sticky="w", padx=4, pady=(0, 4))
 
         self.btn_test = ctk.CTkButton(
             model_row,
@@ -159,7 +172,7 @@ class SettingsScreen(ctk.CTkFrame):
         self.lbl_test_result = ctk.CTkLabel(
             section, text="", font=ctk.CTkFont(size=11), text_color="#546E7A"
         )
-        self.lbl_test_result.grid(row=6, column=0, sticky="w", padx=4, pady=(4, 8))
+        self.lbl_test_result.grid(row=7, column=0, sticky="w", padx=4, pady=(4, 8))
 
     # ── Seção Armazenamento ─────────────────────────────────────────────────────
 
@@ -379,8 +392,9 @@ class SettingsScreen(ctk.CTkFrame):
                     text="✅  Conexão bem-sucedida!", text_color="#66BB6A"
                 ))
             except Exception as e:
-                self.after(0, lambda: self.lbl_test_result.configure(
-                    text=f"❌  {e}", text_color="#EF5350"
+                err_msg = str(e)
+                self.after(0, lambda m=err_msg: self.lbl_test_result.configure(
+                    text=f"❌  {m}", text_color="#EF5350"
                 ))
             finally:
                 self.after(0, lambda: self.btn_test.configure(state="normal", text="🔌  Testar Conexão"))

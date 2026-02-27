@@ -176,6 +176,7 @@ def verificar_licenca_online(machine_id: str) -> Optional[dict]:
                         "expiry": display_exp or "Vitalício",
                         "dias_restantes": dias_restantes,
                         "cliente": res_data.get("cliente", "Cliente Online"),
+                        "auditorias_limite": res_data.get("auditorias", 0), # Novo campo
                         "metodo": "online"
                     }
                 else:
@@ -244,6 +245,7 @@ def validar_licenca(key: str) -> dict:  # type: ignore[type-arg]
             "valido": True,
             "expiry": online_res["expiry"],
             "dias_restantes": online_res.get("dias_restantes", 30),
+            "auditorias_limite": online_res.get("auditorias_limite", 0),
             "metodo": "online"
         }
 

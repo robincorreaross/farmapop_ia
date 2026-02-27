@@ -70,6 +70,13 @@ AVAILABLE_MODELS = {
         "claude-3-5-haiku-20241022",
         "claude-3-opus-20240229",
     ],
+    "openrouter": [
+        "google/gemini-2.0-flash-001",
+        "google/gemini-2.0-pro-exp-02-05:free",
+        "openai/gpt-4o-mini",
+        "anthropic/claude-3-haiku",
+        "deepseek/deepseek-chat",
+    ],
 }
 
 # Configurações padrão
@@ -80,6 +87,7 @@ DEFAULT_SETTINGS: dict[str, Any] = {
         "gemini": "",
         "openai": "",
         "anthropic": "",
+        "openrouter": "",
     },
     "output_folder": str(Path.home() / "Documents" / "FarmaPop"),
     "scanner_name": "",

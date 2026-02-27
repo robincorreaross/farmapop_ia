@@ -14,7 +14,8 @@ from typing import TYPE_CHECKING, List, Optional
 
 import customtkinter as ctk
 
-from core.ai_auditor import AuditResult, auditar_transacao
+from core.ai_auditor import auditar_transacao, AuditResult
+from core.usage_manager import UsageManager
 from core.pdf_generator import gerar_pdf
 from core.transaction import Transaction
 
@@ -32,16 +33,37 @@ class ResultScreen(ctk.CTkFrame):
     ) -> None:
         super().__init__(parent, fg_color="transparent", **kwargs)
         self.app = app
-        self.transaction = transaction
-        self.audit_result: Optional[AuditResult] = None
+        self.transacao = transaction
+        # self.auditor = AIAuditor()  # Removido: agora usamos a função diretamente
+        self.usage_manager = UsageManager()
+        self.audit_result = None
         # Estado da auditoria manual: True=confirmado erro, False=falso positivo
         self._manual_votes: List[Optional[bool]] = []
-        self._build()
-        self._start_audit()
+        
+        # Tenta pegar dados da licença do App pai
+        self.license_data = None
+        if hasattr(self.app, "_license_cache"):
+            self.license_data = self.app._license_cache
+        
+        self._init_ui()
+        
+        # Verifica limite ANTES de começar
+        self.limite_excedido = False
+        if self.license_data:
+            limite = int(self.license_data.get("auditorias_limite", 0))
+            if limite > 0:
+                consumo = self.usage_manager.get_count()
+                if consumo >= limite:
+                    self.limite_excedido = True
+        
+        if self.limite_excedido:
+            self.after(100, self._show_limit_warning)
+        else:
+            self._start_audit()
 
     # ── Layout base ─────────────────────────────────────────────────────────────
 
-    def _build(self) -> None:
+    def _init_ui(self) -> None:
         self.grid_columnconfigure(0, weight=1)
         self.grid_rowconfigure(1, weight=1)
 
@@ -106,24 +128,40 @@ class ResultScreen(ctk.CTkFrame):
 
     # ── Auditoria IA ────────────────────────────────────────────────────────────
 
+    def _show_limit_warning(self) -> None:
+        """Exibe aviso de limite excedido e vai direto para manual."""
+        from tkinter import messagebox
+        messagebox.showwarning(
+            "Limite Diário Excedido",
+            "Você atingiu o limite diário de auditorias IA do seu plano.\n\n"
+            "Esta transação será salva sem passar pela auditoria automática da IA."
+        )
+        self._show_manual_input_form()
+
     def _start_audit(self) -> None:
+        """Inicia o processo de auditoria por IA em uma thread separada."""
+        # Se chegou aqui, incrementa o uso
+        self.usage_manager.increment()
+
         def run() -> None:
             try:
-                images = self.transaction.todas_imagens()
+                images = self.transacao.todas_imagens()
                 result = auditar_transacao(
                     images=images,
-                    tipo_transacao=self.transaction.nome_tipo,
+                    tipo_transacao=self.transacao.nome_tipo,
                     settings=self.app.settings,
                 )
                 self.after(0, lambda: self._show_result(result))
-            except ValueError as e:
+            except ValueError as ve:
+                err_msg = str(ve)
                 # Geralmente erro de API Key ou Provedor não configurado
-                if "Chave de API não configurada" in str(e) or "Provedor desconhecido" in str(e):
+                if "Chave de API não configurada" in err_msg or "Provedor desconhecido" in err_msg:
                     self.after(0, self._show_no_ia_warning)
                 else:
-                    self.after(0, lambda: self._show_error(str(e)))
+                    self.after(0, lambda m=err_msg: self._show_error(m))
             except Exception as e:
-                self.after(0, lambda: self._show_error(str(e)))
+                err_msg = str(e)
+                self.after(0, lambda m=err_msg: self._show_error(m))
 
         threading.Thread(target=run, daemon=True).start()
 
@@ -329,7 +367,7 @@ class ResultScreen(ctk.CTkFrame):
             corner_radius=10,
             fg_color="#1E3A5F",
             hover_color="#1565C0",
-            command=lambda: self.app.show_scan(self.transaction),
+            command=lambda: self.app.show_scan(self.transacao),
         ).grid(row=0, column=1, padx=8)
 
     # ── Auditoria Manual ─────────────────────────────────────────────────────────
@@ -601,7 +639,7 @@ class ResultScreen(ctk.CTkFrame):
             corner_radius=10,
             fg_color="#1E3A5F",
             hover_color="#1565C0",
-            command=lambda: self.app.show_scan(self.transaction),
+            command=lambda: self.app.show_scan(self.transacao),
         ).grid(row=0, column=1, padx=8)
 
     # ── Fallback Manual (Sem IA) ────────────────────────────────────────────────
@@ -869,6 +907,7 @@ class ResultScreen(ctk.CTkFrame):
             font=ctk.CTkFont(size=18, weight="bold"),
             text_color="#FFA726",
         ).pack(pady=4)
+        
         ctk.CTkLabel(
             frame,
             text=message,
@@ -877,24 +916,47 @@ class ResultScreen(ctk.CTkFrame):
             wraplength=480,
         ).pack(pady=8)
 
+        # Botão Tentar Novamente
         ctk.CTkButton(
             frame,
-            text="⚙️  Verificar Configurações",
-            fg_color="#1E3A5F",
-            hover_color="#1565C0",
-            command=self.app.show_settings,
-        ).pack(pady=4)
+            text="🔄   Tentar Novamente",
+            font=ctk.CTkFont(size=13, weight="bold"),
+            height=44,
+            width=240,
+            corner_radius=10,
+            fg_color="#1565C0",
+            hover_color="#1976D2",
+            command=self._start_audit,
+        ).pack(pady=6)
 
+        # Botão Finalizar Manualmente
         ctk.CTkButton(
             frame,
-            text="↩  Voltar",
+            text="📋   Finalizar Manualmente",
+            font=ctk.CTkFont(size=13, weight="bold"),
+            height=44,
+            width=240,
+            corner_radius=10,
+            fg_color="#2E7D32",
+            hover_color="#388E3C",
+            command=self._show_manual_input_form,
+        ).pack(pady=6)
+
+        # Botão Configurações
+        ctk.CTkButton(
+            frame,
+            text="⚙️   Verificar Configurações",
+            font=ctk.CTkFont(size=12),
+            height=36,
+            width=240,
+            corner_radius=10,
             fg_color="transparent",
             border_width=1,
             border_color="#37474F",
             hover_color="#1E3A5F",
             text_color="#78909C",
-            command=lambda: self.app.show_scan(self.transaction),
-        ).pack(pady=4)
+            command=self.app.show_settings,
+        ).pack(pady=(12, 4))
 
     # ── Ações ────────────────────────────────────────────────────────────────────
 
@@ -911,7 +973,7 @@ class ResultScreen(ctk.CTkFrame):
         data = result.data or "SEM_DATA"
 
         try:
-            images = self.transaction.todas_imagens()
+            images = self.transacao.todas_imagens()
             path = gerar_pdf(images, autorizacao, data, output_folder)
             mb.showinfo(
                 "PDF Salvo",

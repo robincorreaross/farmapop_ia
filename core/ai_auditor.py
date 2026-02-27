@@ -147,6 +147,56 @@ def _audit_openai(
     return _parse_json_response(response.choices[0].message.content or "")
 
 
+def _audit_openrouter(
+    images: List[PILImage.Image],
+    prompt: str,
+    api_key: str,
+    model: str,
+) -> dict[str, Any]:
+    """Usa a API do OpenRouter (OpenAI-compatible) para auditoria."""
+    from openai import OpenAI  # Use o cliente openai para compatibilidade
+    
+    # OpenRouter usa baseUrl diferente
+    client = OpenAI(
+        base_url="https://openrouter.ai/api/v1",
+        api_key=api_key,
+    )
+
+    image_messages: list[dict[str, Any]] = []
+    for img in images:
+        b64 = _image_to_base64(img)
+        image_messages.append({
+            "type": "image_url",
+            "image_url": {
+                "url": f"data:image/jpeg;base64,{b64}",
+            },
+        })
+
+    messages: list[dict[str, Any]] = [
+        {
+            "role": "user",
+            "content": [{"type": "text", "text": prompt}] + image_messages,
+        }
+    ]
+
+    # OpenRouter às vezes exige cabeçalhos extras para ranking, mas o SDK básico funciona
+    try:
+        response = client.chat.completions.create(
+            model=model,
+            messages=messages,
+            extra_headers={
+                "HTTP-Referer": "https://github.com/robincorreaross/farmapop_ia",
+                "X-Title": "FarmaPop IA",
+            },
+        )
+        return _parse_json_response(response.choices[0].message.content or "")
+    except Exception as e:
+        err_msg = str(e)
+        if "support image input" in err_msg:
+            raise ValueError(f"O modelo '{model}' não suporta leitura de imagens (Vision). Por favor, escolha outro modelo nas configurações (ex: gemini-2.0-flash ou gpt-4o-mini).")
+        raise
+
+
 def _audit_anthropic(
     images: List[PILImage.Image],
     prompt: str,
@@ -217,6 +267,8 @@ def auditar_transacao(
             raw = _audit_openai(images, prompt, api_key, model)
         elif provider == "anthropic":
             raw = _audit_anthropic(images, prompt, api_key, model)
+        elif provider == "openrouter":
+            raw = _audit_openrouter(images, prompt, api_key, model)
         else:
             raise ValueError(f"Provedor desconhecido: {provider}")
 
@@ -266,6 +318,18 @@ def testar_conexao(settings: dict[str, Any]) -> bool:
             model=model,
             max_tokens=5,
             messages=[{"role": "user", "content": test_prompt}],
+        )
+
+    elif provider == "openrouter":
+        from openai import OpenAI
+        client_or = OpenAI(
+            base_url="https://openrouter.ai/api/v1",
+            api_key=api_key
+        )
+        client_or.chat.completions.create(
+            model=model,
+            messages=[{"role": "user", "content": test_prompt}],
+            max_tokens=5,
         )
 
     return True

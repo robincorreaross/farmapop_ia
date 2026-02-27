@@ -98,7 +98,19 @@ class App(ctk.CTk):
             hover_color="#1E3A5F",
             command=self.show_settings,
         )
-        self.btn_settings.grid(row=4, column=0, padx=12, pady=4, sticky="ew")
+        self.btn_settings.grid(row=5, column=0, padx=12, pady=4, sticky="ew")
+
+        self.btn_retro_audit = ctk.CTkButton(
+            self.sidebar,
+            text="  🤖  Auditoria com IA",
+            font=ctk.CTkFont(size=13),
+            anchor="w",
+            corner_radius=8,
+            fg_color="transparent",
+            hover_color="#1E3A5F",
+            command=self.show_retro_audit,
+        )
+        self.btn_retro_audit.grid(row=4, column=0, padx=12, pady=4, sticky="ew")
 
         self.btn_search_doc = ctk.CTkButton(
             self.sidebar,
@@ -122,7 +134,7 @@ class App(ctk.CTk):
             hover_color="#1E3A5F",
             command=self.show_help,
         )
-        self.btn_help.grid(row=5, column=0, padx=12, pady=4, sticky="ew")
+        self.btn_help.grid(row=6, column=0, padx=12, pady=4, sticky="ew")
 
         # Rodapé com versão
         ctk.CTkLabel(
@@ -346,7 +358,7 @@ class App(ctk.CTk):
     # ── Navegação ────────────────────────────────────────────────────────────────
 
     def _set_active_btn(self, active_btn: ctk.CTkButton) -> None:
-        for btn in [self.btn_home, self.btn_search_doc, self.btn_settings, self.btn_help]:
+        for btn in [self.btn_home, self.btn_search_doc, self.btn_retro_audit, self.btn_settings, self.btn_help]:
             btn.configure(fg_color="transparent")
         active_btn.configure(fg_color="#1E3A5F")
 
@@ -379,6 +391,11 @@ class App(ctk.CTk):
         from ui.screens.search_document_screen import SearchDocumentScreen
         self._set_active_btn(self.btn_search_doc)
         self._show_screen(SearchDocumentScreen)
+
+    def show_retro_audit(self) -> None:
+        from ui.screens.retro_audit_screen import RetroAuditScreen
+        self._set_active_btn(self.btn_retro_audit)
+        self._show_screen(RetroAuditScreen)
 
     def show_help(self) -> None:
         from ui.screens.help_screen import HelpScreen
